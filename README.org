@@ -94,6 +94,7 @@ standard-keys uses the following shortcuts by default (defined in
 | ~Control~ ~=~            | ~text-scale-adjust~ (Set Zoom)                                                   |
 | ~Control~ ~n~            | ~standard-keys-create-new-buffer~ (Create a new empty buffer)                    |
 | ~Control~ ~;~            | ~comment-line~ (Comment out current line)                                        |
+| ~Alt/Meta~ ~0~           | ~delete-window~                                                                  |
 | ~Alt/Meta~ ~1~           | ~delete-other-windows~                                                           |
 | ~Alt/Meta~ ~2~           | ~split-window-below~                                                             |
 | ~Alt/Meta~ ~3~           | ~split-window-right~                                                             |

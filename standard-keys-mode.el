@@ -103,7 +103,7 @@ or a custom one:
 
 ;;;; Internal Functions
 
-(defun sk-key-keybinding (key)
+(defun standard-keys-key-keybinding (key)
   "Execute Dynamic KEY prefix action.
 KEY must be a key prefix string, either \"C-x\" or \"C-c\"."
   ;; menu-item is used here for compute the KEY keymap.
@@ -279,6 +279,7 @@ The buffer major mode is specified in `standard-keys-new-buffer-mode'."
   "C-="   #'text-scale-adjust
   "C-n"   #'standard-keys-create-new-buffer
   "C-;"   #'comment-line
+  "M-0"   #'delete-window
   "M-1"   #'delete-other-windows
   "M-2"   #'split-window-below
   "M-3"   #'split-window-right

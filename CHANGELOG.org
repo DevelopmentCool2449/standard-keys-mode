@@ -3,15 +3,9 @@ or changes.
 
 * Unreleased 1.0.1
 
-Added new commands:
-
-+ standard-keys-copy-region-or-line
-+ standard-keys-cut-region-or-line
-
-~standard-keys-default-keymap~ and ~standard-keys-ergoemacs-like-keymap~
-now uses ~standard-keys-copy-region-or-line~ and
-~standard-keys-cut-region-or-line~ instead of ~kill-ring-save~ and
-~kill-region~.
++ Added new commands: ~standard-keys-copy-region-or-line~ and ~standard-keys-cut-region-or-line~.
++ ~standard-keys-default-keymap~ and ~standard-keys-ergoemacs-like-keymap~ now uses ~standard-keys-copy-region-or-line~ and ~standard-keys-cut-region-or-line~ instead of ~kill-ring-save~ and ~kill-region~.
++ ~delete-window~ is now bound to =M-0= in ~standard-keys-default-keymap~.
 
 * 1.0.0 Release (25 ago. 2025)
 Initial Release
