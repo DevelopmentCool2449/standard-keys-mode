@@ -1,6 +1,6 @@
 ;;; standard-keys-mode.el --- Emulate standard keybindings from modern editors  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2025 Elias Gabriel Pérez
+;; Copyright (C) 2025, 2026 Elias Gabriel Pérez
 
 ;; Author: Elias G. Pérez <eg642616@gmail.com>
 ;; Created: 2025-08-21
