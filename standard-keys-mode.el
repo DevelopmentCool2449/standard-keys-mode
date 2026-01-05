@@ -111,16 +111,6 @@ or a custom one:
 
 (defvar standard-keys--overriding-map)
 
-;; Define the dynamic prefixes
-;; (actually these are not considered internal variables)
-(defvar standard-keys-C-x-dynamic-prefix
-  (standard-keys-key-keybinding "C-x")
-  "Dynamic `C-x' prefix used for the keymaps.")
-
-(defvar standard-keys-C-c-dynamic-prefix
-  (standard-keys-key-keybinding "C-c")
-  "Dynamic `C-c' prefix used for the keymaps.")
-
 
 ;;;; Internal Functions
 
@@ -138,6 +128,15 @@ KEY must be a key prefix string, either \"C-x\" or \"C-c\"."
           (make-composed-keymap
            (standard-keys--get-key-in-active-mode-keymaps key)
            keymap)))))
+
+;; Define the dynamic prefixes
+(defvar standard-keys-C-x-dynamic-prefix
+  (standard-keys-key-keybinding "C-x")
+  "Dynamic `C-x' prefix used for the keymaps.")
+
+(defvar standard-keys-C-c-dynamic-prefix
+  (standard-keys-key-keybinding "C-c")
+  "Dynamic `C-c' prefix used for the keymaps.")
 
 (defun standard-keys--get-key-in-active-mode-keymaps (key &optional maps)
   "Return a list of keymaps from MAPS where prefix KEY is defined.
