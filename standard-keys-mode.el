@@ -101,6 +101,27 @@ or a custom one:
           (symbol :tag "Custom keymap")))
 
 
+;;;; Internal Variables
+
+(defvar standard-keys--emulation-keymap nil
+  "This variable is intended to be placed in `emulation-mode-map-alists'.")
+
+(defvar standard-keys--bk-otl-value nil
+  "Backup value from `overriding-terminal-local-map'.")
+
+(defvar standard-keys--overriding-map)
+
+;; Define the dynamic prefixes
+;; (actually these are not considered internal variables)
+(defvar standard-keys-C-x-dynamic-prefix
+  (standard-keys-key-keybinding "C-x")
+  "Dynamic `C-x' prefix used for the keymaps.")
+
+(defvar standard-keys-C-c-dynamic-prefix
+  (standard-keys-key-keybinding "C-c")
+  "Dynamic `C-c' prefix used for the keymaps.")
+
+
 ;;;; Internal Functions
 
 (defun standard-keys-key-keybinding (key)
@@ -115,10 +136,10 @@ KEY must be a key prefix string, either \"C-x\" or \"C-c\"."
        :filter
        ,(lambda (keymap)
           (make-composed-keymap
-           (sk--get-key-in-active-mode-keymaps key)
+           (standard-keys--get-key-in-active-mode-keymaps key)
            keymap)))))
 
-(defun sk--get-key-in-active-mode-keymaps (key &optional maps)
+(defun standard-keys--get-key-in-active-mode-keymaps (key &optional maps)
   "Return a list of keymaps from MAPS where prefix KEY is defined.
 If MAPS is not set, it will use `current-active-maps' instead."
   (let (list)
@@ -130,13 +151,7 @@ If MAPS is not set, it will use `current-active-maps' instead."
     ;; The keymaps order must be inverted
     (nreverse list)))
 
-(defvar standard-keys-C-x-dynamic-prefix (standard-keys-key-keybinding "C-x")
-  "Dynamic `C-x' prefix used for the keymaps.")
-
-(defvar standard-keys-C-c-dynamic-prefix (standard-keys-key-keybinding "C-c")
-  "Dynamic `C-c' prefix used for the keymaps.")
-
-(defun sk--where-is-prefix-key (prefix map actives)
+(defun standard-keys--where-is-prefix-key (prefix map actives)
   "Return a keymap where PREFIX keymap is defined in keymap MAP.
 ACTIVES is for internal use only."
   (catch 's-k-key
@@ -147,35 +162,51 @@ ACTIVES is for internal use only."
          (throw 's-k-key
                 `(,key
                   keymap
-                  ,@(if (equal prefix sk-C-x-dynamic-prefix)
-                        (sk--get-key-in-active-mode-keymaps "C-x" actives)
-                      (sk--get-key-in-active-mode-keymaps "C-c" actives)))))
+                  ,@(if (equal prefix standard-keys-C-x-dynamic-prefix)
+                        (standard-keys--get-key-in-active-mode-keymaps "C-x" actives)
+                      (standard-keys--get-key-in-active-mode-keymaps "C-c" actives)))))
 
         ((keymapp def)
-         (when-let* ((map (sk--where-is-prefix-key prefix def actives)))
+         (when-let* ((map (standard-keys--where-is-prefix-key prefix def actives)))
            (throw 's-k-key
                   `(,key keymap ,map))))))
      map)))
 
-(defun sk--where-is-internal-advice (orig-fun def &optional keymap &rest rest)
+(defun standard-keys--where-is-internal-advice (orig-fun def &optional keymap &rest rest)
   "Advice for `where-is-internal' to find DEF in the rebinded \\`C-x' and \\`C-c' maps.
 ORIG-FUN, KEYMAP and REST are arguments for `where-is-internal'."
   (unless keymap
     (let* ((actives (current-active-maps))
            (map (symbol-value standard-keys-map-style))
-           (C-x (sk--where-is-prefix-key sk-C-x-dynamic-prefix map actives))
-           (C-c (sk--where-is-prefix-key sk-C-c-dynamic-prefix map actives)))
+           (C-x (standard-keys--where-is-prefix-key standard-keys-C-x-dynamic-prefix map actives))
+           (C-c (standard-keys--where-is-prefix-key standard-keys-C-c-dynamic-prefix map actives)))
       (setq keymap
             `(,@actives
               ,(make-composed-keymap
                 `(,C-x ,C-c))))))
   (apply orig-fun def keymap rest))
 
+(defun standard-keys--override-new-C-x-C-c-bindings ()
+  "Override the new `C-x' and `C-c' bindings.
+Add new `C-c' and `C-x' bindings to `overriding-terminal-local-map' if
+`standard-keys-override-new-C-x-and-C-c-commands' is non-nil."
+  (when standard-keys-override-new-C-x-and-C-c-commands
+    (let* ((C-c (keymap-lookup (symbol-value standard-keys-map-style) "C-c"))
+           (C-x (keymap-lookup (symbol-value standard-keys-map-style) "C-x"))
+           (list (append
+                  (if C-c (list "C-c" C-c))
+                  (if C-x (list "C-x" C-x)))))
+      (when list
+        (setq
+         standard-keys--bk-otl-value overriding-terminal-local-map
+         standard-keys--overriding-map (apply #'define-keymap list)
+         overriding-terminal-local-map standard-keys--overriding-map)))))
+
 
 ;;;; Commands
 
 ;;;###autoload
-(defun sk-keyboard-quit ()
+(defun standard-keys-keyboard-quit ()
   "Quit from the current command/action.
 This acts like `C-g' but is intended to be used for any other additional
 keybindings.
@@ -185,7 +216,7 @@ NOTE: This doesn't work if `C-g' is remaped."
   (call-interactively (key-binding "\C-g")))
 
 ;;;###autoload
-(defun sk-newline-and-indent-before-point ()
+(defun standard-keys-newline-and-indent-before-point ()
   "Like `newline-and-indent', but inserts the newline before cursor."
   (interactive "^")
   (beginning-of-line)
@@ -193,7 +224,7 @@ NOTE: This doesn't work if `C-g' is remaped."
   (indent-according-to-mode))
 
 ;;;###autoload
-(defun sk-move-beginning-of-line-or-indentation (arg)
+(defun standard-keys-move-beginning-of-line-or-indentation (arg)
   "Move point to visible beginning of current logical line or indentation.
 If point is already at the beginning of the indentation, point is moved
 to the beginning of the line, otherwise it is moved to beginning of the
@@ -208,7 +239,7 @@ ARG is used like in `move-beginning-of-line'."
       (move-beginning-of-line arg))))
 
 ;;;###autoload
-(defun sk-create-new-buffer ()
+(defun standard-keys-create-new-buffer ()
   "Create a new Untitled empty buffer.
 The buffer major mode is specified in `standard-keys-new-buffer-mode'."
   (interactive)
@@ -226,7 +257,7 @@ The buffer major mode is specified in `standard-keys-new-buffer-mode'."
     (switch-to-buffer buf)))
 
 ;;;###autoload
-(defun sk-copy-region-or-line ()
+(defun standard-keys-copy-region-or-line ()
   "Copy the active region, or the current line if no region is active."
   (interactive)
   (let* ((region (use-region-p))
@@ -236,7 +267,7 @@ The buffer major mode is specified in `standard-keys-new-buffer-mode'."
     (kill-ring-save beg end region)))
 
 ;;;###autoload
-(defun sk-cut-region-or-line ()
+(defun standard-keys-cut-region-or-line ()
   "Cut the active region, or the current line if no region is active."
   (interactive)
   (kill-region (line-beginning-position)
@@ -372,30 +403,6 @@ keybindings from ergoemacs."
 
 ;;;; Minor mode definition
 
-(defvar sk--emulation-keymap nil
-  "This variable is intended to be placed in `emulation-mode-map-alists'.")
-
-(defvar sk--bk-otl-value nil
-  "Backup value from `overriding-terminal-local-map'.")
-
-(defvar sk--overriding-map)
-
-(defun sk--override-new-C-x-C-c-bindings ()
-  "Override the new `C-x' and `C-c' bindings.
-Add new `C-c' and `C-x' bindings to `overriding-terminal-local-map' if
-`standard-keys-override-new-C-x-and-C-c-commands' is non-nil."
-  (when sk-override-new-C-x-and-C-c-commands
-    (let* ((C-c (keymap-lookup (symbol-value standard-keys-map-style) "C-c"))
-           (C-x (keymap-lookup (symbol-value standard-keys-map-style) "C-x"))
-           (list (append
-                  (if C-c (list "C-c" C-c))
-                  (if C-x (list "C-x" C-x)))))
-      (when list
-        (setq
-         sk--bk-otl-value overriding-terminal-local-map
-         sk--overriding-map (apply #'define-keymap list)
-         overriding-terminal-local-map sk--overriding-map)))))
-
 ;;;###autoload
 (define-minor-mode standard-keys-mode
   "Emulate standard keybindings from modern editors."
@@ -404,26 +411,23 @@ Add new `C-c' and `C-x' bindings to `overriding-terminal-local-map' if
   (cond
    (noninteractive
     (setq standard-keys-mode nil))
-   (sk-mode
-    (setq sk--emulation-keymap `((sk-mode . ,(symbol-value standard-keys-map-style))))
-    (add-to-ordered-list 'emulation-mode-map-alists 'sk--emulation-keymap 400)
+   (standard-keys-mode
+    (setq standard-keys--emulation-keymap `((standard-keys-mode . ,(symbol-value standard-keys-map-style))))
+    (add-to-ordered-list 'emulation-mode-map-alists 'standard-keys--emulation-keymap 400)
 
     (standard-keys--override-new-C-x-C-c-bindings)
 
     (when standard-keys-update-commands-descriptions
-      (advice-add #'where-is-internal :around #'sk--where-is-internal-advice)))
+      (advice-add #'where-is-internal :around #'standard-keys--where-is-internal-advice)))
 
    (t
-    (setq emulation-mode-map-alists (delq 'sk--emulation-keymap emulation-mode-map-alists))
+    (setq emulation-mode-map-alists (delq 'standard-keys--emulation-keymap emulation-mode-map-alists))
 
-    (when sk-override-new-C-x-and-C-c-commands
-      (setq overriding-terminal-local-map sk--bk-otl-value))
+    (when standard-keys-override-new-C-x-and-C-c-commands
+      (setq overriding-terminal-local-map standard-keys--bk-otl-value))
 
-    (when sk-update-commands-descriptions
-      (advice-remove #'where-is-internal #'sk--where-is-internal-advice)))))
+    (when standard-keys-update-commands-descriptions
+      (advice-remove #'where-is-internal #'standard-keys--where-is-internal-advice)))))
 
 (provide 'standard-keys-mode)
 ;;; standard-keys-mode.el ends here
-;; Local Variables:
-;; read-symbol-shorthands: (("sk-" . "standard-keys-"))
-;; End:
